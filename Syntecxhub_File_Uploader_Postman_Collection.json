@@ -1,0 +1,242 @@
+{
+  "info": {
+    "_postman_id": "7a35c91b-69e1-4c59-bf89-9189ef993214",
+    "name": "SyntecxHub - File Uploader API (Multer & MongoDB GridFS)",
+    "description": "Production-grade RESTful API collection for SyntecxHub Internship Project 3: File Uploader.\nIncludes Multipart uploads via Multer, chunked storage in MongoDB GridFS, file retrieval, streaming with Range support, metadata queries, and deletion.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "fileId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "System Health",
+      "item": [
+        {
+          "name": "Health Check & Database Ping",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health"]
+            },
+            "description": "Check if API and MongoDB GridFS bucket are operational."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Storage Statistics",
+      "item": [
+        {
+          "name": "Get GridFS Storage Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "stats"]
+            },
+            "description": "Returns total files count, total bytes stored, and breakdown by MIME category."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "File Uploads (Multer)",
+      "item": [
+        {
+          "name": "Upload Single File",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.success && json.file && json.file._id) {",
+                  "    pm.collectionVariables.set('fileId', json.file._id);",
+                  "    console.log('Saved fileId:', json.file._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "uploader",
+                  "value": "SyntecxHub Intern",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Quarterly system design document",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/files/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "upload"]
+            },
+            "description": "Upload a single file via multipart/form-data. Handled by Multer memoryStorage and streamed to GridFS."
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Multiple Files (Batch)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "uploader",
+                  "value": "SyntecxHub Intern",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Batch assets upload",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/files/upload-multiple",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "upload-multiple"]
+            },
+            "description": "Upload up to 10 files simultaneously in a single multipart request."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "File Retrieval & Management",
+      "item": [
+        {
+          "name": "List Files (Filter & Pagination)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/files?q=&category=All&sort=newest&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files"],
+              "query": [
+                { "key": "q", "value": "", "description": "Search keyword" },
+                { "key": "category", "value": "All", "description": "Filter by Image, Document, Video, etc." },
+                { "key": "sort", "value": "newest", "description": "newest, oldest, largest, smallest, name_asc" },
+                { "key": "page", "value": "1", "description": "Page number" },
+                { "key": "limit", "value": "20", "description": "Results per page" }
+              ]
+            },
+            "description": "Query files list with regex search, category filtering, and sorting."
+          },
+          "response": []
+        },
+        {
+          "name": "Get File Metadata by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileId}}"]
+            },
+            "description": "Fetch file details, chunk counts, MIME type, and metadata."
+          },
+          "response": []
+        },
+        {
+          "name": "Stream File Inline (View)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Range",
+                "value": "bytes=0-1024",
+                "description": "Optional HTTP Byte Range header",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileId}}/view",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileId}}", "view"]
+            },
+            "description": "Streams raw file directly from GridFS chunks. Supports HTTP 206 Partial Content."
+          },
+          "response": []
+        },
+        {
+          "name": "Download File (Attachment)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileId}}/download",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileId}}", "download"]
+            },
+            "description": "Forces browser/client download with original filename."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete File & GridFS Chunks",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/{{fileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "{{fileId}}"]
+            },
+            "description": "Deletes file metadata document and purges all BSON chunks from GridFS."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
