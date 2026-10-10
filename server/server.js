@@ -67,7 +67,7 @@ if (process.env.NODE_ENV === 'production') {
   const distPath = path.join(__dirname, '..', 'dist');
   app.use(express.static(distPath));
 
-  app.get('*', (req, res, next) => {
+  app.use((req, res, next) => {
     if (req.originalUrl.startsWith('/api')) {
       return next();
     }
@@ -118,7 +118,8 @@ async function startServer() {
 }
 
 // Automatically start if run directly
-if (process.env.NODE_ENV !== 'test') {
+const isMainModule = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename);
+if (isMainModule && process.env.NODE_ENV !== 'test') {
   startServer();
 }
 
